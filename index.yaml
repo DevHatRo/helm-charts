@@ -1,0 +1,26 @@
+apiVersion: v1
+entries:
+  influxdb2-backup:
+  - apiVersion: v2
+    appVersion: 2.7.4
+    created: "2024-04-24T14:01:35.085381854Z"
+    description: A Helm chart for InfluxDB v2 Backup
+    digest: 4120e5be17ca56e93bd27cec9818458d83b6d25777b4085e29cb72bcebde11e0
+    icon: https://avatars0.githubusercontent.com/u/5713248?s=200&v=4
+    keywords:
+    - backups
+    - aws s3 storage
+    - azure storage
+    - gc storage
+    - InfluxDB2
+    maintainers:
+    - email: vukomir@ianculov.ro
+      name: vukomir
+    name: influxdb2-backup
+    sources:
+    - https://github.com/influxdata/influxdb
+    type: application
+    urls:
+    - https://github.com/DevHatRo/helm-charts/releases/download/influxdb2-backup-1.0.0/influxdb2-backup-1.0.0.tgz
+    version: 1.0.0
+generated: "2024-04-24T14:01:35.085393897Z"
