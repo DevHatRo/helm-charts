@@ -1,0 +1,6 @@
+# Artifact Hub repository metadata file
+# Used to become verified publisher and more - https://artifacthub.io/docs/topics/repositories/#verified-publisher
+repositoryID: d36ab567-7eeb-4a2a-b8d4-f0b55dad72dd
+owners:
+  - name: Vucomir Ianculov
+    email: vukomir@ianculov.ro
