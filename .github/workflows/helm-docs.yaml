@@ -1,0 +1,37 @@
+name: Generate Helm Docs
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'charts/**'
+
+jobs:
+  helm-docs:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.head_ref }}
+
+      - name: Install Helm Docs
+        run: |
+          wget https://github.com/norwoodj/helm-docs/releases/download/v1.11.3/helm-docs_1.11.3_Linux_x86_64.tar.gz
+          tar -xvf helm-docs_1.11.3_Linux_x86_64.tar.gz
+          sudo mv helm-docs /usr/local/bin/
+
+      - name: Run Helm Docs
+        run: |
+          helm-docs
+          if [[ `git status --porcelain` ]]; then
+            git config user.name "$GITHUB_ACTOR"
+            git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+            git add charts/*/README.md
+            git commit -m "Update Helm chart documentation [skip ci]"
+            git push origin ${{ github.head_ref }}
+          fi 

@@ -1,0 +1,85 @@
+# Default values for clamav-api
+
+replicaCount: 1
+
+image:
+  repository: ghcr.io/devhatro/clamav-api
+  pullPolicy: IfNotPresent
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+podAnnotations: {}
+podSecurityContext:
+  fsGroup: 0
+
+securityContext:
+  capabilities:
+    drop:
+      - ALL
+    add:
+      - CHOWN
+      - SETGID
+      - SETUID
+      - DAC_OVERRIDE
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: true
+  runAsUser: 0
+  runAsGroup: 0
+  runAsNonRoot: false
+
+service:
+  type: ClusterIP
+  port: 6000
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 2Gi
+  requests:
+    cpu: 100m
+    memory: 1Gi
+
+persistence:
+  enabled: false
+  storageClass: ""
+  size: 1Gi
+  accessMode: ReadWriteOnce
+  annotations: {}
+  # Optional selector for PV
+  selector:
+    {}
+    # matchLabels:
+    #   type: ssd
+
+config:
+  ginMode: release
+  debug: false
+  maxSize: "209715200"
+  host: "0.0.0.0"
+  port: "6000"
+  socket: "/var/run/clamav/clamd.ctl"
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
