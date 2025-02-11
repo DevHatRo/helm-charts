@@ -59,7 +59,6 @@ persistence:
   size: 1Gi
   accessMode: ReadWriteOnce
   annotations: {}
-  # Optional selector for PV
   selector:
     {}
     # matchLabels:
