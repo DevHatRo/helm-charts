@@ -13,3 +13,6 @@ keywords:
   - clamav
   - antivirus
   - api
+
+sources:
+  - https://github.com/DevHatRo/helm-charts
