@@ -4,16 +4,18 @@ appVersion: 2.7.4
 version: 1.0.0
 type: application
 description: A Helm chart for InfluxDB v2 Backup
+
 sources:
   - https://github.com/DevHatRo/helm-charts
+  - https://github.com/influxdata/influxdb
+
 keywords:
   - backups
   - aws s3 storage
   - azure storage
   - gc storage
   - InfluxDB2
-sources:
-  - https://github.com/influxdata/influxdb
+
 maintainers:
   - name: vukomir
     email: vukomir@ianculov.ro
