@@ -10,11 +10,14 @@ on:
 jobs:
   helm-docs:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.head_ref }}
 
       - name: Install Helm Docs
         run: |
@@ -30,5 +33,5 @@ jobs:
             git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
             git add charts/*/README.md
             git commit -m "Update Helm chart documentation [skip ci]"
-            git push
+            git push origin ${{ github.head_ref }}
           fi 
