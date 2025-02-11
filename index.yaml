@@ -3,6 +3,27 @@ entries:
   clamav-api:
   - apiVersion: v2
     appVersion: 1.0.2
+    created: "2025-02-11T09:40:32.240786613Z"
+    description: A REST API for ClamAV antivirus scanning
+    digest: b295b646d2b008a24b841e1c6916b2e030e78184ba3422f48d024a27be5e045d
+    keywords:
+    - clamav
+    - antivirus
+    - api
+    maintainers:
+    - email: vukomir@ianculov.ro
+      name: vukomir
+      url: https://github.com/vukomir
+    name: clamav-api
+    sources:
+    - https://github.com/DevHatRo/helm-charts
+    - https://github.com/DevHatRo/ClamAV-API
+    type: application
+    urls:
+    - https://github.com/DevHatRo/helm-charts/releases/download/clamav-api-1.0.1/clamav-api-1.0.1.tgz
+    version: 1.0.1
+  - apiVersion: v2
+    appVersion: 1.0.2
     created: "2025-02-11T09:11:35.707001042Z"
     description: A REST API for ClamAV antivirus scanning
     digest: 5186f9656edec229d04bccb501e109755be1ea47bcb3dfdbcede8f430111e9d4
@@ -45,4 +66,4 @@ entries:
     urls:
     - https://github.com/DevHatRo/helm-charts/releases/download/influxdb2-backup-1.0.0/influxdb2-backup-1.0.0.tgz
     version: 1.0.0
-generated: "2025-02-11T09:11:35.904114919Z"
+generated: "2025-02-11T09:40:32.24079592Z"
