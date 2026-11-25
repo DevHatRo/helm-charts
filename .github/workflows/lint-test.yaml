@@ -43,9 +43,7 @@ jobs:
 
       - name: Verify Helm Docs
         run: |
-          wget https://github.com/norwoodj/helm-docs/releases/download/v1.14.2/helm-docs_1.14.2_Linux_x86_64.tar.gz
-          tar -xvf helm-docs_1.14.2_Linux_x86_64.tar.gz
-          sudo mv helm-docs /usr/local/bin/
+          curl -sSfL https://github.com/norwoodj/helm-docs/releases/download/v1.14.2/helm-docs_1.14.2_Linux_x86_64.tar.gz | sudo tar -xz -C /usr/local/bin helm-docs
           helm-docs
           if [[ -n "$(git status --porcelain)" ]]; then
             echo "Documentation is out of date. Please run 'helm-docs' and commit changes"
