@@ -2,6 +2,27 @@ apiVersion: v1
 entries:
   clamav-api:
   - apiVersion: v2
+    appVersion: v2.0.1
+    created: "2026-11-25T18:32:55.243484107Z"
+    description: A REST API for ClamAV antivirus scanning
+    digest: c8f3de8dccc78d8882e1045c97547faf7d273c362f2e02637c84b6f0ed2f48b3
+    keywords:
+    - clamav
+    - antivirus
+    - api
+    maintainers:
+    - email: vukomir@ianculov.ro
+      name: vukomir
+      url: https://github.com/vukomir
+    name: clamav-api
+    sources:
+    - https://github.com/DevHatRo/helm-charts
+    - https://github.com/DevHatRo/ClamAV-API
+    type: application
+    urls:
+    - https://github.com/DevHatRo/helm-charts/releases/download/clamav-api-1.1.0/clamav-api-1.1.0.tgz
+    version: 1.1.0
+  - apiVersion: v2
     appVersion: 1.0.2
     created: "2025-02-11T09:40:32.240786613Z"
     description: A REST API for ClamAV antivirus scanning
@@ -45,6 +66,30 @@ entries:
     version: 1.0.0
   influxdb2-backup:
   - apiVersion: v2
+    appVersion: 2.10.1
+    created: "2026-11-25T18:32:55.450129563Z"
+    description: A Helm chart for InfluxDB v2 Backup
+    digest: dc91240f7de5b266cd22364ec9aa3bf86cc861e7239b00e7530833fdb99093e3
+    icon: https://avatars0.githubusercontent.com/u/5713248?s=200&v=4
+    keywords:
+    - backups
+    - aws s3 storage
+    - azure storage
+    - gc storage
+    - InfluxDB2
+    kubeVersion: '>=1.21.0-0'
+    maintainers:
+    - email: vukomir@ianculov.ro
+      name: vukomir
+    name: influxdb2-backup
+    sources:
+    - https://github.com/DevHatRo/helm-charts
+    - https://github.com/influxdata/influxdb
+    type: application
+    urls:
+    - https://github.com/DevHatRo/helm-charts/releases/download/influxdb2-backup-1.1.0/influxdb2-backup-1.1.0.tgz
+    version: 1.1.0
+  - apiVersion: v2
     appVersion: 2.7.4
     created: "2024-04-24T14:01:35.085381854Z"
     description: A Helm chart for InfluxDB v2 Backup
@@ -66,4 +111,28 @@ entries:
     urls:
     - https://github.com/DevHatRo/helm-charts/releases/download/influxdb2-backup-1.0.0/influxdb2-backup-1.0.0.tgz
     version: 1.0.0
-generated: "2025-02-11T09:40:32.24079592Z"
+  outbound-smtp:
+  - apiVersion: v2
+    appVersion: 2.0.0
+    created: "2026-11-25T18:32:55.650968252Z"
+    description: Outbound-only SMTP relay with DKIM signing
+    digest: 02a7f688af7e78ef769506da0e99805a98a68b8bb13331e16d5bf24d4a30d596
+    keywords:
+    - smtp
+    - relay
+    - dkim
+    - mail
+    kubeVersion: '>=1.25.0-0'
+    maintainers:
+    - email: vukomir@ianculov.ro
+      name: vukomir
+      url: https://github.com/vukomir
+    name: outbound-smtp
+    sources:
+    - https://github.com/DevHatRo/helm-charts
+    - https://github.com/DevHatRo/outbound-smtp
+    type: application
+    urls:
+    - https://github.com/DevHatRo/helm-charts/releases/download/outbound-smtp-0.1.0/outbound-smtp-0.1.0.tgz
+    version: 0.1.0
+generated: "2026-11-25T18:32:55.650984937Z"
