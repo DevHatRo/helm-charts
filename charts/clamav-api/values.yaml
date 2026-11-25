@@ -33,6 +33,8 @@ securityContext:
 service:
   type: ClusterIP
   port: 6000
+  # gRPC service port, exposed when config.enableGrpc is true
+  grpcPort: 9000
 
 ingress:
   enabled: false
@@ -70,6 +72,11 @@ config:
   maxSize: "209715200"
   host: "0.0.0.0"
   port: "6000"
+  # gRPC server (ClamAV-API >= v2.0.0)
+  enableGrpc: true
+  grpcPort: "9000"
+  # Scan timeout in seconds
+  scanTimeout: "300"
   socket: "/var/run/clamav/clamd.ctl"
 
 autoscaling:
