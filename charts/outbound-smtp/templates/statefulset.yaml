@@ -1,0 +1,238 @@
+{{- $hostname := required "config.hostname is required (must match the PTR record of the sending IP)" .Values.config.hostname }}
+{{- $ownCert := or .Values.tls.existingSecret .Values.tls.selfSigned }}
+{{- if and .Values.acme.enabled $ownCert }}
+{{- fail "choose one certificate source: tls.existingSecret / tls.selfSigned, or acme.enabled" }}
+{{- end }}
+{{- if not (or .Values.acme.enabled $ownCert) }}
+{{- fail "a certificate is required: set tls.existingSecret, acme.enabled=true, or tls.selfSigned=true (testing only)" }}
+{{- end }}
+{{- if and .Values.acme.enabled (not .Values.acme.agreeTOS) }}
+{{- fail "acme.agreeTOS=true is required with acme.enabled" }}
+{{- end }}
+{{- if ne (empty .Values.smarthost.username) (empty .Values.smarthost.existingSecret) }}
+{{- fail "set both smarthost.username and smarthost.existingSecret, or neither" }}
+{{- end }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "outbound-smtp.fullname" . }}
+  labels:
+    {{- include "outbound-smtp.labels" . | nindent 4 }}
+spec:
+  serviceName: {{ include "outbound-smtp.fullname" . }}
+  # SQLite holds the queue: exactly one writer.
+  replicas: 1
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      {{- include "outbound-smtp.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "outbound-smtp.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      serviceAccountName: {{ include "outbound-smtp.serviceAccountName" . }}
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: {{ include "outbound-smtp.image" . | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args: ["serve"]
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          env:
+            - name: SMTP_HOSTNAME
+              value: {{ $hostname | quote }}
+            # Unprivileged ports so the relay runs as non-root without capabilities;
+            # the Service maps 465/587/25/80 onto them.
+            - name: SMTP_LISTEN_465
+              value: ":8465"
+            - name: SMTP_LISTEN_587
+              value: ":8587"
+            - name: SMTP_LISTEN_25
+              value: ":8025"
+            - name: METRICS_LISTEN
+              value: ":9090"
+            - name: DATA_DIR
+              value: /data
+            - name: SMTP_ENABLE_PORT25
+              value: {{ .Values.config.enablePort25 | quote }}
+            - name: SMTP_PORT25_STARTTLS
+              value: {{ .Values.config.port25StartTLS | quote }}
+            - name: MAX_MESSAGE_SIZE
+              value: {{ .Values.config.maxMessageSize | quote }}
+            - name: QUEUE_MAX_AGE
+              value: {{ .Values.config.queueMaxAge | quote }}
+            - name: LOG_LEVEL
+              value: {{ .Values.config.logLevel | quote }}
+            - name: LOG_RECIPIENTS
+              value: {{ .Values.config.logRecipients | quote }}
+            {{- if $ownCert }}
+            - name: TLS_CERT_FILE
+              value: /certs/tls.crt
+            - name: TLS_KEY_FILE
+              value: /certs/tls.key
+            {{- end }}
+            {{- if .Values.acme.enabled }}
+            - name: ACME_ENABLED
+              value: "true"
+            - name: ACME_AGREE_TOS
+              value: {{ .Values.acme.agreeTOS | quote }}
+            - name: ACME_CHALLENGE
+              value: {{ .Values.acme.challenge | quote }}
+            - name: ACME_HTTP_LISTEN
+              value: ":8080"
+            {{- with .Values.acme.email }}
+            - name: ACME_EMAIL
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .Values.acme.domains }}
+            - name: ACME_DOMAINS
+              value: {{ join "," . | quote }}
+            {{- end }}
+            {{- with .Values.acme.dnsProvider }}
+            - name: ACME_DNS_PROVIDER
+              value: {{ . | quote }}
+            {{- end }}
+            {{- with .Values.acme.directoryURL }}
+            - name: ACME_DIRECTORY_URL
+              value: {{ . | quote }}
+            {{- end }}
+            {{- end }}
+            {{- if .Values.smarthost.host }}
+            - name: SMARTHOST_HOST
+              value: {{ .Values.smarthost.host | quote }}
+            - name: SMARTHOST_PORT
+              value: {{ .Values.smarthost.port | quote }}
+            {{- end }}
+            {{- if .Values.smarthost.existingSecret }}
+            - name: SMARTHOST_USERNAME
+              value: {{ .Values.smarthost.username | quote }}
+            - name: SMARTHOST_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.smarthost.existingSecret }}
+                  key: {{ .Values.smarthost.passwordKey }}
+            {{- end }}
+            {{- range $name, $value := .Values.env }}
+            - name: {{ $name }}
+              value: {{ $value | quote }}
+            {{- end }}
+          {{- if or .Values.envFrom (and .Values.acme.enabled .Values.acme.existingSecret) }}
+          envFrom:
+            {{- if and .Values.acme.enabled .Values.acme.existingSecret }}
+            - secretRef:
+                name: {{ .Values.acme.existingSecret }}
+            {{- end }}
+            {{- with .Values.envFrom }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- end }}
+          ports:
+            - name: smtps
+              containerPort: 8465
+              protocol: TCP
+            - name: submission
+              containerPort: 8587
+              protocol: TCP
+            {{- if .Values.config.enablePort25 }}
+            - name: smtp
+              containerPort: 8025
+              protocol: TCP
+            {{- end }}
+            {{- if and .Values.acme.enabled (eq .Values.acme.challenge "http") }}
+            - name: acme-http
+              containerPort: 8080
+              protocol: TCP
+            {{- end }}
+            - name: metrics
+              containerPort: 9090
+              protocol: TCP
+          {{- with .Values.probes.startup }}
+          startupProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.probes.liveness }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.probes.readiness }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
+            {{- if $ownCert }}
+            - name: certs
+              mountPath: /certs
+              readOnly: true
+            {{- end }}
+            {{- with .Values.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        {{- if $ownCert }}
+        - name: certs
+          secret:
+            secretName: {{ include "outbound-smtp.tlsSecretName" . }}
+        {{- end }}
+        {{- if not .Values.persistence.enabled }}
+        - name: data
+          emptyDir: {}
+        {{- end }}
+        {{- with .Values.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+  {{- if .Values.persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+        {{- with .Values.persistence.annotations }}
+        annotations:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+      spec:
+        accessModes:
+          - {{ .Values.persistence.accessMode }}
+        {{- with .Values.persistence.storageClass }}
+        storageClassName: {{ . | quote }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.persistence.size }}
+  {{- end }}
