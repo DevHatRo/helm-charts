@@ -1,0 +1,20 @@
+outbound-smtp {{ .Chart.AppVersion }} is running as {{ include "outbound-smtp.fullname" . }}-0.
+
+A fresh install relays nothing. Configure it with the built-in CLI:
+
+  kubectl -n {{ .Release.Namespace }} exec -it {{ include "outbound-smtp.fullname" . }}-0 -- outbound-smtp domain add example.com
+  kubectl -n {{ .Release.Namespace }} exec -it {{ include "outbound-smtp.fullname" . }}-0 -- outbound-smtp dkim generate example.com
+  kubectl -n {{ .Release.Namespace }} exec -it {{ include "outbound-smtp.fullname" . }}-0 -- outbound-smtp user add myapp --generate
+
+Clients connect to {{ include "outbound-smtp.fullname" . }}.{{ .Release.Namespace }}.svc on port {{ .Values.service.smtpsPort }} (TLS) or {{ .Values.service.submissionPort }} (STARTTLS).
+{{- if .Values.tls.selfSigned }}
+
+WARNING: tls.selfSigned is enabled. Clients will not trust this certificate; use it for testing only.
+{{- end }}
+{{- if not .Values.persistence.enabled }}
+
+WARNING: persistence is disabled. The queue, domains, DKIM keys and users are lost when the pod restarts.
+{{- end }}
+
+Publish PTR, SPF, DKIM and DMARC records for {{ .Values.config.hostname }} and every sending domain:
+https://github.com/DevHatRo/outbound-smtp#dns-checklist

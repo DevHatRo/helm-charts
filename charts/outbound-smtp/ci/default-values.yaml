@@ -1,0 +1,4 @@
+config:
+  hostname: relay.example.com
+tls:
+  selfSigned: true

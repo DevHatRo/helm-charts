@@ -1,0 +1,25 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      github-actions-minor-patch:
+        update-types: [minor, patch]
+      github-actions-major:
+        update-types: [major]
+
+  # Tracks Chart.yaml dependencies and image repository/tag pairs in values.yaml.
+  # Image bumps do not touch Chart.yaml version/appVersion: bump those in the PR
+  # before merging, otherwise ct lint fails and chart-releaser publishes nothing.
+  - package-ecosystem: helm
+    directories:
+      - /charts/*
+    schedule:
+      interval: weekly
+    groups:
+      helm-minor-patch:
+        update-types: [minor, patch]
+      helm-major:
+        update-types: [major]

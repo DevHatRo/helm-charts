@@ -1,0 +1,196 @@
+# Default values for outbound-smtp.
+# The relay keeps its queue, domains, DKIM keys and users in one SQLite file,
+# so it always runs as a single-replica StatefulSet: there is no replicaCount.
+
+image:
+  # -- Image repository
+  repository: ghcr.io/devhatro/outbound-smtp
+  # -- Image pull policy
+  pullPolicy: IfNotPresent
+  # -- Image tag (defaults to the chart appVersion)
+  tag: ""
+  # -- Image digest (`sha256:...`); wins over `tag` when set
+  digest: ""
+
+# -- Image pull secrets
+imagePullSecrets: []
+# -- Override the chart name
+nameOverride: ""
+# -- Override the full resource name
+fullnameOverride: ""
+
+# -- Pod security context. The image runs as uid/gid 10001; fsGroup makes the data volume writable.
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+  fsGroup: 10001
+  fsGroupChangePolicy: OnRootMismatch
+  seccompProfile:
+    type: RuntimeDefault
+
+# -- Container security context
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+# -- Container resources
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    memory: 256Mi
+
+service:
+  # -- Service type for the SMTP ports. Use LoadBalancer to accept mail from outside the cluster.
+  type: ClusterIP
+  # -- Service annotations (e.g. load balancer settings)
+  annotations: {}
+  # -- `Local` keeps the client source IP; required if you trust networks (`network add`)
+  # for clients outside the cluster, otherwise the relay sees node addresses.
+  externalTrafficPolicy: ""
+  # -- Implicit TLS port (container listens on 8465)
+  smtpsPort: 465
+  # -- STARTTLS submission port (container listens on 8587)
+  submissionPort: 587
+  # -- Plain SMTP port for trusted networks, exposed only when `config.enablePort25` is true (container listens on 8025)
+  smtpPort: 25
+
+# -- Startup, liveness and readiness probes. All use `/healthz` on the metrics port.
+# The startup probe allows 5 minutes for a first ACME certificate to be issued.
+probes:
+  startup:
+    httpGet:
+      path: /healthz
+      port: metrics
+    periodSeconds: 5
+    failureThreshold: 60
+  liveness:
+    httpGet:
+      path: /healthz
+      port: metrics
+    periodSeconds: 30
+    timeoutSeconds: 5
+    failureThreshold: 3
+  readiness:
+    httpGet:
+      path: /healthz
+      port: metrics
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+config:
+  # -- Required. `SMTP_HOSTNAME`: name used in EHLO; must match the PTR record of the sending IP
+  hostname: ""
+  # -- `SMTP_ENABLE_PORT25`: enable plain SMTP for trusted networks
+  enablePort25: false
+  # -- `SMTP_PORT25_STARTTLS`: offer STARTTLS on port 25
+  port25StartTLS: true
+  # -- `MAX_MESSAGE_SIZE`: largest accepted message
+  maxMessageSize: 25MB
+  # -- `QUEUE_MAX_AGE`: queue lifetime before a message bounces
+  queueMaxAge: 72h
+  # -- `LOG_LEVEL`: debug, info, warn or error
+  logLevel: info
+  # -- `LOG_RECIPIENTS`: also log full recipient addresses (personal data)
+  logRecipients: false
+
+# -- Any other environment variable the relay reads, keyed by name
+# (e.g. `DELIVERY_CONCURRENCY: "20"`, `OTEL_EXPORTER_OTLP_ENDPOINT`). Values are quoted.
+env: {}
+
+# -- Extra `envFrom` sources (ConfigMaps or Secrets)
+envFrom: []
+
+tls:
+  # -- Existing `kubernetes.io/tls` Secret (keys `tls.crt`, `tls.key`) for SMTP_HOSTNAME,
+  # e.g. from cert-manager. Renewals are picked up without a restart.
+  existingSecret: ""
+  # -- Generate a self-signed certificate. For testing only: clients will not trust it.
+  selfSigned: false
+
+acme:
+  # -- Obtain the certificate from Let's Encrypt instead of `tls` (stored under /data/acme)
+  enabled: false
+  # -- `ACME_AGREE_TOS`: must be true with ACME; you accept the CA's terms of service
+  agreeTOS: false
+  # -- `ACME_EMAIL`: optional contact address
+  email: ""
+  # -- `ACME_DOMAINS`: certificate names (defaults to `config.hostname`)
+  domains: []
+  # -- `ACME_CHALLENGE`: `http` (needs port 80 of every name to reach the pod) or `dns`
+  challenge: http
+  # -- `ACME_DNS_PROVIDER` for DNS-01: cloudflare, hetzner or cpanel
+  dnsProvider: ""
+  # -- Existing Secret with the DNS provider credentials as env vars
+  # (`CLOUDFLARE_DNS_API_TOKEN`, `HETZNER_API_TOKEN`, or `CPANEL_USERNAME`/`CPANEL_TOKEN`/`CPANEL_BASE_URL`)
+  existingSecret: ""
+  # -- `ACME_DIRECTORY_URL` (empty = Let's Encrypt production; use staging while testing)
+  directoryURL: ""
+  # -- Service port for the HTTP-01 challenge (container listens on 8080)
+  httpPort: 80
+
+smarthost:
+  # -- `SMARTHOST_HOST`: send everything through this host instead of MX lookup
+  host: ""
+  # -- `SMARTHOST_PORT`: 465 uses implicit TLS, others STARTTLS
+  port: 587
+  # -- `SMARTHOST_USERNAME` (requires `existingSecret`)
+  username: ""
+  # -- Existing Secret holding the smarthost password
+  existingSecret: ""
+  # -- Key in `existingSecret` holding the password
+  passwordKey: password
+
+persistence:
+  # -- Persist /data (SQLite queue, domains, DKIM keys, users). Without it everything is lost on pod restart.
+  enabled: true
+  # -- Storage class (empty = cluster default)
+  storageClass: ""
+  # -- Access mode
+  accessMode: ReadWriteOnce
+  # -- Volume size
+  size: 1Gi
+  # -- PVC annotations
+  annotations: {}
+
+# -- Extra volumes
+extraVolumes: []
+# -- Extra volume mounts
+extraVolumeMounts: []
+
+serviceAccount:
+  # -- Create a ServiceAccount
+  create: true
+  # -- ServiceAccount name (generated from fullname if empty)
+  name: ""
+  # -- ServiceAccount annotations
+  annotations: {}
+
+metrics:
+  serviceMonitor:
+    # -- Create a Prometheus Operator ServiceMonitor for the metrics Service (port 9090, never exposed publicly)
+    enabled: false
+    # -- Scrape interval
+    interval: 30s
+    # -- Extra ServiceMonitor labels (e.g. for the Prometheus selector)
+    labels: {}
+
+# -- Seconds to wait on shutdown; the relay gives open sessions and deliveries 30s
+terminationGracePeriodSeconds: 40
+
+# -- Node selector
+nodeSelector: {}
+# -- Tolerations
+tolerations: []
+# -- Affinity
+affinity: {}
+# -- Pod annotations
+podAnnotations: {}
+# -- Extra pod labels
+podLabels: {}

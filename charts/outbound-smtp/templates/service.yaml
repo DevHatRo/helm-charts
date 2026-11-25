@@ -1,0 +1,56 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "outbound-smtp.fullname" . }}
+  labels:
+    {{- include "outbound-smtp.labels" . | nindent 4 }}
+  {{- with .Values.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.service.type }}
+  {{- with .Values.service.externalTrafficPolicy }}
+  externalTrafficPolicy: {{ . }}
+  {{- end }}
+  ports:
+    - name: smtps
+      port: {{ .Values.service.smtpsPort }}
+      targetPort: smtps
+      protocol: TCP
+    - name: submission
+      port: {{ .Values.service.submissionPort }}
+      targetPort: submission
+      protocol: TCP
+    {{- if .Values.config.enablePort25 }}
+    - name: smtp
+      port: {{ .Values.service.smtpPort }}
+      targetPort: smtp
+      protocol: TCP
+    {{- end }}
+    {{- if and .Values.acme.enabled (eq .Values.acme.challenge "http") }}
+    - name: acme-http
+      port: {{ .Values.acme.httpPort }}
+      targetPort: acme-http
+      protocol: TCP
+    {{- end }}
+  selector:
+    {{- include "outbound-smtp.selectorLabels" . | nindent 4 }}
+---
+# /metrics and /healthz are unauthenticated: always ClusterIP, never on the SMTP Service.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "outbound-smtp.fullname" . }}-metrics
+  labels:
+    {{- include "outbound-smtp.labels" . | nindent 4 }}
+    app.kubernetes.io/component: metrics
+spec:
+  type: ClusterIP
+  ports:
+    - name: metrics
+      port: 9090
+      targetPort: metrics
+      protocol: TCP
+  selector:
+    {{- include "outbound-smtp.selectorLabels" . | nindent 4 }}

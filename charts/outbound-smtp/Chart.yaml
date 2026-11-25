@@ -1,0 +1,22 @@
+apiVersion: v2
+name: outbound-smtp
+description: Outbound-only SMTP relay with DKIM signing
+type: application
+version: 0.1.0
+appVersion: "2.0.0"
+kubeVersion: ">=1.25.0-0"
+
+maintainers:
+  - name: vukomir
+    email: vukomir@ianculov.ro
+    url: https://github.com/vukomir
+
+keywords:
+  - smtp
+  - relay
+  - dkim
+  - mail
+
+sources:
+  - https://github.com/DevHatRo/helm-charts
+  - https://github.com/DevHatRo/outbound-smtp

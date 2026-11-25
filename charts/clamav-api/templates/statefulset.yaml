@@ -56,10 +56,21 @@ spec:
               value: {{ .Values.config.host }}
             - name: CLAMAV_PORT
               value: {{ .Values.config.port | quote }}
+            - name: CLAMAV_ENABLE_GRPC
+              value: {{ .Values.config.enableGrpc | quote }}
+            - name: CLAMAV_GRPC_PORT
+              value: {{ .Values.config.grpcPort | quote }}
+            - name: CLAMAV_SCAN_TIMEOUT
+              value: {{ .Values.config.scanTimeout | quote }}
           ports:
             - name: http
-              containerPort: {{ .Values.service.port }}
+              containerPort: {{ .Values.config.port }}
               protocol: TCP
+            {{- if .Values.config.enableGrpc }}
+            - name: grpc
+              containerPort: {{ .Values.config.grpcPort }}
+              protocol: TCP
+            {{- end }}
           livenessProbe:
             httpGet:
               path: /api/health-check
